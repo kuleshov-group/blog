@@ -1,0 +1,416 @@
+# -----------------------------------------------------------------------------
+# Site settings
+# -----------------------------------------------------------------------------
+
+title: Kuleshov Group # the website title (if blank, full name will be used instead)
+first_name: Volodymyr
+middle_name:
+last_name: Kuleshov
+contact_note: >
+description: > # the ">" symbol means to ignore newlines until "footer_text:"
+  Research blog.
+footer_text: >
+  Powered by <a href="https://jekyllrb.com/" target="_blank">Jekyll</a> with the <a href="https://github.com/alshedivat/al-folio">al-folio</a> theme.
+keywords: diffusion models, language models, machine learning, deep learning
+lang: en # the language of your site (for example: en, fr, cn, ru, etc.)
+icon: 🌀 # the emoji used as the favicon (alternatively, provide image name in /assets/img/)
+
+url: "https://kuleshov-group.github.io"
+baseurl: "/blog"
+last_updated: false
+impressum_path:
+back_to_top: true
+
+# -----------------------------------------------------------------------------
+# Theme
+# -----------------------------------------------------------------------------
+
+repo_theme_light: default
+repo_theme_dark: dark
+repo_trophies:
+  enabled: false
+
+external_services:
+  github_readme_stats_url: https://github-readme-stats.vercel.app
+  github_profile_trophy_url: https://github-profile-trophy.vercel.app
+
+# -----------------------------------------------------------------------------
+# al-folio API (v1.x)
+# -----------------------------------------------------------------------------
+
+al_folio:
+  api_version: 1
+  style_engine: tailwind
+  tailwind:
+    version: 4.1.18
+    preflight: false
+    css_entry: assets/tailwind/app.css
+  distill:
+    engine: distillpub-template
+    source: al-org-dev/distill-template#al-folio
+    allow_remote_loader: true
+  features:
+    cv:
+      enabled: false
+    distill:
+      enabled: true
+  compat:
+    bootstrap:
+      enabled: false
+  upgrade:
+    channel: stable
+    auto_apply_safe_fixes: false
+
+# -----------------------------------------------------------------------------
+# Layout
+# -----------------------------------------------------------------------------
+
+navbar_fixed: true
+footer_fixed: true
+search_enabled: false
+socials_in_search: false
+posts_in_search: true
+bib_search: false
+
+# Dimensions
+max_width: 930px
+
+# -----------------------------------------------------------------------------
+# Open Graph & Schema.org
+# -----------------------------------------------------------------------------
+serve_og_meta: true
+serve_schema_org: false
+og_image:
+
+# -----------------------------------------------------------------------------
+# Analytics and search engine verification
+# -----------------------------------------------------------------------------
+
+analytics:
+  google:
+  cronitor:
+  pirsch:
+  openpanel:
+
+google_site_verification:
+bing_site_verification:
+
+# -----------------------------------------------------------------------------
+# Blog
+# -----------------------------------------------------------------------------
+
+blog_name: Kuleshov Group Blog
+blog_description: Notes on diffusion models, language models, and machine learning.
+permalink: /blog/:year/:title/
+lsi: false
+
+pagination:
+  enabled: true
+
+related_blog_posts:
+  enabled: false
+  max_related: 5
+
+# Giscus comments -- disabled by default (leave repo blank to keep disabled)
+giscus:
+  repo:
+  repo_id:
+  category: Comments
+  category_id:
+  mapping: title
+  strict: 1
+  reactions_enabled: 1
+  input_position: bottom
+  dark_theme: dark
+  light_theme: light
+  emit_metadata: 0
+  lang: en
+
+disqus_shortname:
+
+# No external sources -- keep build hermetic (no network fetches at build time)
+external_sources: []
+
+# -----------------------------------------------------------------------------
+# Newsletter
+# -----------------------------------------------------------------------------
+
+newsletter:
+  enabled: false
+  endpoint:
+
+# -----------------------------------------------------------------------------
+# Collections
+# -----------------------------------------------------------------------------
+
+collections:
+  books:
+    output: true
+  news:
+    defaults:
+      layout: post
+    output: true
+  projects:
+    output: true
+  teachings:
+    output: true
+
+# -----------------------------------------------------------------------------
+# Jekyll settings
+# -----------------------------------------------------------------------------
+
+markdown: kramdown
+highlighter: rouge
+kramdown:
+  input: GFM
+  syntax_highlighter_opts:
+    css_class: "highlight"
+    span:
+      line_numbers: false
+    block:
+      line_numbers: false
+      start_line: 1
+
+include: ["_pages"]
+exclude:
+  - al-folio-upgrade-report.md
+  - bin/
+  - CONTRIBUTING.md
+  - CUSTOMIZE.md
+  - Dockerfile
+  - docker-compose.yml
+  - docker-compose-slim.yml
+  - docs/
+  - FAQ.md
+  - Gemfile
+  - Gemfile.lock
+  - INSTALL.md
+  - LICENSE
+  - lighthouse_results/
+  - package.json
+  - package-lock.json
+  - purgecss.config.js
+  - README.md
+  - readme_preview/
+  - gems/
+  - migrations/
+  - vendor
+  - inputs/
+  - img/
+
+keep_files:
+  - CNAME
+  - .nojekyll
+
+theme: al_folio_core
+
+plugins:
+  - jekyll-3rd-party-libraries
+  - jekyll-archives-v2
+  - jekyll-cache-bust
+  - jekyll-email-protect
+  - jekyll-feed
+  - jekyll-get-json
+  - jekyll-imagemagick
+  - jekyll-link-attributes
+  - jekyll-minifier
+  - jekyll-paginate-v2
+  - jekyll-regex-replace
+  - jekyll/scholar
+  - jekyll-sitemap
+  - jekyll-socials
+  - jekyll-tabs
+  - jekyll-terser
+  - jekyll-toc
+  - jemoji
+
+  # al-folio plugins
+  - al_folio_core
+  - al_icons
+  - al_folio_distill
+  - al_folio_upgrade
+  - al_folio_bootstrap_compat
+  - al_img_tools
+  - al_math
+
+defaults:
+  - scope:
+      path: "assets"
+    values:
+      sitemap: false
+
+sass:
+  style: compressed
+
+jekyll-minifier:
+  compress_javascript: false
+  compress_css: false
+  exclude: ["robots.txt"]
+
+terser:
+  compress:
+    drop_console: true
+
+jekyll-archives:
+  posts:
+    enabled: [year]
+    permalinks:
+      year: "/blog/:year/"
+  books:
+    enabled: []
+
+display_tags: []
+display_categories: []
+
+# -----------------------------------------------------------------------------
+# Jekyll Scholar (only used if a publications page is added later)
+# -----------------------------------------------------------------------------
+
+scholar:
+  last_name: [Kuleshov]
+  first_name: [Volodymyr, V.]
+
+  style: apa
+  locale: en
+
+  source: /_bibliography/
+  bibliography: papers.bib
+  bibliography_template: bib
+  bibtex_filters: [latex, smallcaps, superscript]
+
+  replace_strings: true
+  join_strings: true
+
+  details_dir: bibliography
+  details_link: Details
+
+  query: "@*"
+  group_by: year
+  group_order: descending
+
+enable_publication_badges:
+  altmetric: false
+  dimensions: false
+  google_scholar: false
+  inspirehep: false
+
+filtered_bibtex_keywords:
+  [
+    abbr,
+    abstract,
+    additional_info,
+    altmetric,
+    annotation,
+    arxiv,
+    award,
+    award_name,
+    bibtex_show,
+    blog,
+    code,
+    dimensions,
+    eprint,
+    google_scholar_id,
+    hal,
+    html,
+    inspirehep_id,
+    pdf,
+    pmid,
+    poster,
+    preview,
+    selected,
+    slides,
+    supp,
+    video,
+    website,
+  ]
+
+max_author_limit: 3
+more_authors_animation_delay: 10
+enable_publication_thumbnails: true
+
+# -----------------------------------------------------------------------------
+# Jekyll Link Attributes
+# -----------------------------------------------------------------------------
+
+external_links:
+  enabled: true
+  rel: external nofollow noopener
+  target: _blank
+  exclude:
+
+# -----------------------------------------------------------------------------
+# Responsive WebP Images
+# -----------------------------------------------------------------------------
+
+imagemagick:
+  enabled: true
+  widths:
+    - 480
+    - 800
+    - 1400
+  input_directories:
+    - assets/img/
+  input_formats:
+    - ".jpg"
+    - ".jpeg"
+    - ".png"
+    - ".tiff"
+    - ".gif"
+  output_formats:
+    webp: "-auto-orient -quality 85"
+
+lazy_loading_images: true
+
+# -----------------------------------------------------------------------------
+# Optional Features
+# -----------------------------------------------------------------------------
+
+enable_google_verification: false
+enable_bing_verification: false
+enable_cookie_consent: false
+enable_masonry: false
+enable_math: true
+enable_tooltips: false
+enable_darkmode: true
+enable_navbar_social: false
+enable_project_categories: false
+enable_medium_zoom: true
+enable_progressbar: true
+enable_video_embedding: false
+
+# -----------------------------------------------------------------------------
+# Library versions
+# -----------------------------------------------------------------------------
+
+third_party_libraries:
+  download: false
+  fontawesome:
+    integrity:
+      css: "sha256-MVopmdyC2tYTiJ8wlktf0uh0v4NgT+vNdyVFepi7Q0c="
+    url:
+      css: "https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@{{version}}/css/all.min.css"
+    version: "7.2.0"
+  academicons:
+    integrity:
+      css: "sha256-SzrCOBJbGVFMahewkgjwnApaV2+av1DwMAA+/QGLyZw="
+    url:
+      css: "https://cdn.jsdelivr.net/npm/academicons@{{version}}/css/academicons.min.css"
+    version: "1.9.5"
+  google_fonts:
+    url:
+      fonts: "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:100,300,400,500,700|Material+Icons&display=swap"
+  mathjax:
+    integrity:
+      js: "sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="
+    local:
+      fonts: "output/chtml/fonts/woff-v2/"
+    url:
+      fonts: "https://cdn.jsdelivr.net/npm/mathjax@{{version}}/es5/output/chtml/fonts/woff-v2/"
+      js: "https://cdn.jsdelivr.net/npm/mathjax@{{version}}/es5/tex-mml-chtml.js"
+    version: "3.2.2"
+  vanilla-back-to-top:
+    integrity:
+      js: "sha256-uMJJ3EoTyfRBoTbR+lrfu1uRQ87RZG8AR3cVNuQVeFg="
+    url:
+      js: "https://cdn.jsdelivr.net/npm/vanilla-back-to-top@{{version}}/dist/vanilla-back-to-top.min.js"
+    version: "7.2.1"

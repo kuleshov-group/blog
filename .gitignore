@@ -1,2 +1,14 @@
 inputs
 img
+
+# Jekyll
+_site/
+.jekyll-cache/
+.jekyll-metadata
+.sass-cache/
+.bundle/
+vendor/
+.tweet-cache/
+
+# Ruby / Bundler
+*.gem
