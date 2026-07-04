@@ -120,8 +120,8 @@
         different approach. Instead of sequentially building up a sentence
         token-by-token, diffusion models learn to iteratively denoise a masked or
         corrupted version of the target text, refining their output over several
-        steps. This method unlocks new possibilities for efficiency, flexibility, and
-        control in language generation.
+        steps. This enables parallel generation, variable-length outputs, and global
+        control over the text as it is produced.
       </p>
 
       <p>
@@ -184,9 +184,13 @@
         <figcaption>The forward process masks each token of $x$ independently with probability $1-\alpha_t$: as the signal level $\alpha_t$ decays from 1 to 0, the partially-masked datapoint $z_t$ decays into a fully masked sequence.</figcaption>
       </figure>
 
+      <aside>
+        <p>Standard BERT masks a fixed ~15% of tokens at every training step. Masked diffusion models instead sample a fresh masking rate — anywhere from nearly 0% to 100% — at every step, so the model learns to denoise sequences at every noise level, not just one.</p>
+      </aside>
+
       <p>
         The <strong>reverse process</strong> is the generative procedure: starting
-        from this fully masked sequence, the model un-masks tokens in a sequence of
+        from this fully masked sequence, the model unmasks tokens in a sequence of
         iterative steps, each time filling in some of the blanks using its current
         best predictions. Each denoising step leverages the transformer's ability to
         reason over both observed and masked positions, making use of the entire
@@ -197,18 +201,6 @@
         <img src="assets/img/masked-diffusion-reverse.png" alt="Reverse denoising process for masked diffusion language models" />
         <figcaption>The reverse (unmasking) process moves from a noisier $z_t$ to a less-noisy $z_s$ by combining the model's denoising predictions $p(z_s \mid z_t, x_\theta)$ with the unmasking posterior $q(z_s \mid z_t, x)$.</figcaption>
       </figure>
-
-      <p>
-        Unlike BERT, which applies a fixed masking ratio, masked diffusion models
-        sample a masking rate at each training step, simulating various levels of
-        corruption. This randomization teaches the model to denoise sequences across a
-        broad range of noise levels, equipping it for robust and flexible generation
-        at test time.
-      </p>
-
-      <aside>
-        <p>Standard BERT masks a fixed ~15% of tokens at every training step. Masked diffusion models instead sample a fresh masking rate — anywhere from nearly 0% to 100% — at every step, so the model learns to denoise sequences at every noise level, not just one.</p>
-      </aside>
 
       <h3 id="sampling-iterative-text-generation">Sampling: Iterative Text Generation</h3>
 
@@ -226,8 +218,8 @@
       </ol>
 
       <p>
-        This iterative, bidirectional refinement stands in stark contrast to the
-        strictly left-to-right, one-pass nature of autoregressive generation.
+        This iterative, bidirectional refinement contrasts with the strictly
+        left-to-right, one-pass nature of autoregressive generation.
       </p>
 
       <figure>
@@ -238,7 +230,7 @@
       <p>
         The number of sampling steps $T$ is a free hyperparameter, typically chosen to
         be much smaller than the sequence length
-        $L$<d-footnote>This is what enables the parallel-generation speedups discussed below: an autoregressive model needs $L$ sequential forward passes to produce a length-$L$ sequence, while a diffusion model can use as few as $T \ll L$ steps, each of which updates many tokens at once.</d-footnote>.
+        $L$<d-footnote>This is what enables the parallel-generation speedups discussed in the section on inference efficiency below.</d-footnote>.
         Despite this simple recipe, masked diffusion language models are already
         competitive with much more specialized discrete diffusion approaches, and
         close much of the likelihood gap to autoregressive models
@@ -277,8 +269,8 @@
         This leads to a theoretical speedup of $L/T$, and in practice this can
         accelerate inference by 5&ndash;10&times; compared to AR models
         <d-cite key="khanna2025mercury"></d-cite>. This parallelism makes diffusion
-        LMs particularly attractive for deployment in latency-sensitive applications,
-        such as conversational AI and real-time multimodal systems.
+        models well-suited to latency-sensitive settings, such as conversational AI
+        and real-time multimodal systems.
       </p>
 
       <details>
@@ -317,9 +309,9 @@
         the entire sequence at once, it generates one block of tokens at a time; within
         each block, tokens are produced in parallel using diffusion. This hybrid
         design preserves the parallelism of diffusion models while introducing
-        semi-global context — the model attends both within a block and to previously
-        generated blocks — recovering arbitrary-length generation and efficient KV
-        caching. As a result, block diffusion is a practical framework for scalable,
+        semi-global context — that is, the model attends both within a block and to
+        all previously generated blocks, rather than to the full sequence at once —
+        recovering arbitrary-length generation and efficient KV caching. As a result, block diffusion is a practical framework for scalable,
         flexible text generation.
       </p>
 
@@ -371,8 +363,8 @@
         With ReMDM, you can dynamically decide where to focus more computation — by
         revisiting uncertain or important tokens — resulting in substantial
         improvements to sample quality. In practice, inference-time scaling with
-        ReMDM significantly narrows the quality gap between diffusion models and
-        autoregressive models.
+        ReMDM raises generation quality from a MAUVE score of 0.042 for plain MDLM
+        sampling to near the autoregressive baseline.
       </p>
 
       <figure>
@@ -396,7 +388,7 @@
         reason for the success of diffusion models in image generation is their
         controllability — techniques like classifier-free guidance (CFG) and
         classifier-based guidance (CBG) have made it possible to steer image
-        generation toward specific attributes or prompts with remarkable precision.
+        generation toward specific attributes or prompts.
       </p>
 
       <p>
@@ -500,12 +492,6 @@
         <img src="assets/img/diffusion-examples-mercury.png" alt="Mercury diffusion language model benchmark" />
         <figcaption>Mercury matches the quality of speed-optimized frontier autoregressive models like GPT-4.1 Nano and Claude 3.5 Haiku while running more than 7&times; faster (benchmarks from Artificial Analysis) <d-cite key="khanna2025mercury"></d-cite>.</figcaption>
       </figure>
-
-      <p>
-        Masked diffusion is now emerging as a competitive paradigm for large-scale
-        language modeling, with implications across domains, modalities, and
-        real-world deployments.
-      </p>
 
       <!-- ============================================================ -->
       <h2 id="conclusion-a-new-paradigm">Conclusion: A New Paradigm</h2>
