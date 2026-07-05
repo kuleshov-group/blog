@@ -1,7 +1,7 @@
 ---
 layout: distill
-title: "Diffusion: The Next Frontier in Language Modeling"
-description: "An introduction to masked diffusion language models: how they work, why they are a compelling alternative to autoregressive LLMs, and where the field is headed. Adapted from an ICML 2025 workshop talk."
+title: "Discrete Diffusion: Directions and Opportunities in Language Modeling "
+description: "An introduction to masked diffusion language models: how they work, why they are a compelling alternative to autoregressive LLMs, and where the field is headed."
 date: 2025-10-01
 featured: true
 
@@ -46,6 +46,8 @@ toc:
   - name: "The Rise of Large Diffusion Language Models"
   - name: "Conclusion: A New Paradigm"
 ---
+
+<p><em>Adapted from an invited talk at the <a href="https://icml.cc/virtual/2025/52767">ICML 2025 Workshop on Long-Context Foundation Models</a>.</em></p>
 
 <h2 id="introduction-from-autoregression-to-diffusion">Introduction: From Autoregression to Diffusion</h2>
 
