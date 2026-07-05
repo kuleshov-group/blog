@@ -12,14 +12,17 @@ authors:
       name: Cornell University
       url: "https://www.cs.cornell.edu/"
   - name: Marianne Arriola
+    url: "http://m-arriola.com/"
     affiliations:
       name: Cornell University
       url: "https://www.cs.cornell.edu/"
   - name: Yair Schiff
+    url: "https://yair-schiff.github.io/"
     affiliations:
       name: Cornell University
       url: "https://www.cs.cornell.edu/"
   - name: Guanghan Wang
+    url: "https://guanghanwang.github.io/"
     affiliations:
       name: Cornell University
       url: "https://www.cs.cornell.edu/"
