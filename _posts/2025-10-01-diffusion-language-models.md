@@ -1,7 +1,7 @@
 ---
 layout: distill
 title: "Discrete Diffusion: A New Frontier For Language Modeling"
-description: "We introduce diffusion language models and explain their main advantages over standard autoregerssive models using existing large diffusion models as examples. We also highlight diffusion for language as an emerging research direction in generative AI. Adapted from an invited talk at the ICML 2025 Workshop on Long-Context Foundation Models."
+description: "We introduce diffusion language models and explain their main advantages over standard autoregerssive models using existing large diffusion models as examples. We also highlight diffusion for language as an emerging research direction in generative AI. Adapted from an invited workshop talk at ICML 2025."
 date: 2025-10-01
 featured: true
 
