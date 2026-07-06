@@ -1,7 +1,7 @@
 ---
 layout: distill
-title: "Discrete Diffusion: Directions and Opportunities in Language Modeling "
-description: "An introduction to masked diffusion language models: how they work, why they are a compelling alternative to autoregressive LLMs, and where the field is headed."
+title: "Discrete Diffusion: A New Frontier For Language Modeling"
+description: "We introduce diffusion language models and explain their main advantages over standard autoregerssive models using existing large diffusion models as examples. We also highlight diffusion for language as an emerging research direction in generative AI."
 date: 2025-10-01
 featured: true
 
@@ -52,12 +52,9 @@ toc:
 <h2 id="introduction-from-autoregression-to-diffusion">Introduction: From Autoregression to Diffusion</h2>
 
 <p>
-  Recent breakthroughs in language modeling have come from autoregressive (AR)
-  models, such as GPT and its many descendants. These models generate text one
-  token at a time, each new word conditioned on the entire preceding context.
-  While effective, AR models are inherently sequential: they can't easily
-  parallelize generation, and mistakes made early on can snowball as generation
-  continues.
+  Today, language modeling is dominated by autoregressive (AR)
+  models, such as GPT and its many descendants. These models generate text left to right, one token at a time.
+  While effective, this approach cannot easily parallelize generation and cannot correct previous mistakes, which compound as sampling continues.
 </p>
 
 <p>
@@ -65,22 +62,21 @@ toc:
   different approach. Instead of sequentially building up a sentence
   token-by-token, diffusion models learn to iteratively denoise a masked or
   corrupted version of the target text, refining their output over several
-  steps. This enables parallel generation, variable-length outputs, and global
-  control over the text as it is produced.
+  steps. This enables parallel generation, built-in error correction, and global
+  iterative refinement over the text as it is produced.
 </p>
 
 <p>
-  This blog post introduces the key ideas behind masked diffusion language
-  models, a promising alternative to traditional AR models. We explain how these
-  models work, highlight their unique advantages — such as parallel generation,
-  variable-length outputs, iterative refinement, and better controllability —
+  This blog post introduces masked diffusion language
+  models, the popular diffusion-based alternative to traditional AR models. We explain how these
+  models work, highlight their unique advantages — such as parallel generation,iterative refinement, and better controllability —
   and finally describe several ongoing efforts in training large-scale diffusion
   LLMs.
 </p>
 
 <figure>
   <img src="{{ '/assets/img/diffusion-intro-comparison.png' | relative_url }}" alt="Autoregressive vs. diffusion generation compared on images" />
-  <figcaption>Two ways to generate an image: an autoregressive model fills in pixels one at a time in a fixed raster-scan order (left), while a diffusion model starts from noise and denoises the whole image in parallel over a few steps (right). This post carries the same contrast over to text.</figcaption>
+  <figcaption>Two ways to generate an image: an autoregressive model fills in pixels one at a time in a fixed raster-scan order (left), while a diffusion model starts from noise and denoises the whole image in parallel over a few steps (right). This post carries the same contrast over to text. Slide credit: Stefano Ermon.</figcaption>
 </figure>
 
 <h2 id="simple-masked-diffusion-language-models">Simple Masked Diffusion Language Models</h2>
@@ -107,7 +103,7 @@ toc:
 
 <figure>
   <img src="{{ '/assets/img/masked-diffusion-forward-reverse.png' | relative_url }}" alt="Forward and reverse processes side by side" />
-  <figcaption>The forward (masking) and reverse (unmasking) processes: a datapoint $x$ is progressively masked into $z_t$, and an unmasking model $x_\theta$ learns to map back from $z_t$ to $x$.</figcaption>
+  <figcaption>The forward (masking) and reverse (unmasking) processes: a datapoint $x$ is progressively masked into $z_t$, and an unmasking model $x_\theta$ learns to map back from $z_t$ to $x$. Slide credit: Sasha Rush.</figcaption>
 </figure>
 
 <h3 id="training-learning-to-denoise">Training: Learning to Denoise</h3>
@@ -125,7 +121,7 @@ toc:
 
 <figure>
   <img src="{{ '/assets/img/masked-diffusion-forward.png' | relative_url }}" alt="Forward masking process for masked diffusion language models" />
-  <figcaption>The forward process masks each token of $x$ independently with probability $1-\alpha_t$: as the signal level $\alpha_t$ decays from 1 to 0, the partially-masked datapoint $z_t$ decays into a fully masked sequence.</figcaption>
+  <figcaption>The forward process masks each token of $x$ independently with probability $1-\alpha_t$: as the signal level $\alpha_t$ decays from 1 to 0, the partially-masked datapoint $z_t$ decays into a fully masked sequence. Slide credit: Sasha Rush.</figcaption>
 </figure>
 
 <aside>
@@ -143,7 +139,7 @@ toc:
 
 <figure>
   <img src="{{ '/assets/img/masked-diffusion-reverse.png' | relative_url }}" alt="Reverse denoising process for masked diffusion language models" />
-  <figcaption>The reverse (unmasking) process moves from a noisier $z_t$ to a less-noisy $z_s$ by combining the model's denoising predictions $p(z_s \mid z_t, x_\theta)$ with the unmasking posterior $q(z_s \mid z_t, x)$.</figcaption>
+  <figcaption>The reverse (unmasking) process moves from a noisier $z_t$ to a less-noisy $z_s$ by combining the model's denoising predictions $p(z_s \mid z_t, x_\theta)$ with the unmasking posterior $q(z_s \mid z_t, x)$. Slide credit: Sasha Rush.</figcaption>
 </figure>
 
 <h3 id="sampling-iterative-text-generation">Sampling: Iterative Text Generation</h3>
