@@ -1,7 +1,7 @@
 ---
 layout: distill
-title: "How to Build a Diffusion Language Model in 2026?"
-description: "An introduction to diffusion language models and the research advances that underlie a recent generation of diffusion LLMs."
+title: "How to Build a Diffusion Language Model"
+description: "An introduction to diffusion language models and the research advances that underlie today's diffusion LLMs. We describe the building blocks of recent open source models, starting from simple masking diffusion, and including techniques for iterative refinement, post-training, and variable-length generation. This defines the main ingredients needed to build a diffusion language model today."
 date: 2026-07-05
 featured: true
 
@@ -39,42 +39,39 @@ toc:
 ---
 
 <p>
-  <em>This article introduces diffusion language models and describes the
-  research advances that underlie a recent generation of diffusion LLMs.
+  <em>
   Adapted from ICLR 2026 &amp; MLSS 2026 talks.</em>
 </p>
 
 <h2 id="introduction-autoregressive-and-diffusion-language-models">Introduction: Autoregressive and Diffusion Language Models</h2>
 
 <p>
-  If we look today at the landscape of generative modeling, two families of
-  algorithms are widely used. Whenever we model continuous data such as
-  images or video, the state-of-the-art approach is based on
-  <strong>diffusion models</strong>. Most discrete data, such as text or code,
-  is instead modeled with <strong>autoregressive models</strong>. This article
-  traces the development of an alternative approach to discrete data built on
-  the modern paradigm of diffusion.
+  Two families of generative AI algorithms dominate today. For continuous data
+  such as images or video, the state-of-the-art approach is based on
+  <strong>diffusion models</strong>. For discrete data such as text or code, the
+  standard approach is instead <strong>autoregressive models</strong>. This
+  article explores an alternative for discrete data, one built on the modern
+  paradigm of diffusion.
 </p>
 
 <p>
-  Language models today are usually autoregressive: they generate tokens
-  left-to-right, one at a time, each conditioned on the tokens before it.
-  While this approach is powerful and underlies the AI systems we use today,
-  it also has limitations:
+  Today's mainstream language models are autoregressive: they generate tokens
+  left-to-right, one at a time, each conditioned on the tokens before it. This
+  approach is powerful, but it also has inherent limitations:
 </p>
 <ul>
-  <li><strong>Fixed compute per token</strong> ($T = L$): the model cannot spend more or fewer steps to generate harder or easier content.</li>
-  <li><strong>No error correction</strong>: once a token is emitted it cannot be changed, so mistakes accumulate.</li>
+  <li><strong>No error correction</strong>: once a token is emitted it cannot be revised, so early mistakes compound.</li>
+  <li><strong>Generation is slow</strong>: producing a sequence takes as many steps as there are tokens, and does not naturally lend itself to fast, parallel generation.</li>
   <li><strong>Causal attention</strong>: generation only ever looks backward, never at future context.</li>
 </ul>
 
 <p>
-  Diffusion models take a different approach. Instead of producing text one
-  token at a time, they generate all tokens at once, starting from an initial
-  guess and iteratively refining it over a number of steps. This yields several
-  advantages: generation can use fewer steps to go faster (or more steps for
-  higher quality), it admits error correction, and each step uses bidirectional
-  context.
+  Diffusion models take a different approach. Rather than producing text one
+  token at a time, they generate the whole sequence at once, starting from an
+  initial guess and iteratively refining it over a number of steps. This unlocks
+  several advantages: generation can trade off speed and quality by using fewer
+  or more steps, mistakes can be corrected along the way, and every step attends
+  to bidirectional context.
 </p>
 
 <figure>
@@ -87,53 +84,92 @@ toc:
 </figure>
 
 <p>
-  Applying diffusion to language has been a long-standing open problem. In 2024
-  the field saw a breakthrough in which diffusion models became competitive with
+  Applying diffusion to language had long been an open problem. In 2024 the field
+  reached a turning point, as diffusion models became competitive with
   autoregressive models on quality. By 2026, diffusion LLMs are a reality, with
   releases from leading industry labs &mdash; <strong>Mercury 2</strong> (Inception
   Labs) <d-cite key="khanna2025mercury"></d-cite>, <strong>Gemma Diffusion</strong>
   (Google) <d-cite key="google2026diffusiongemma"></d-cite>, and
   <strong>Nemotron Diffusion</strong> (NVIDIA) <d-cite key="fu2026nemotronlabsdiffusion"></d-cite>.
-  This article introduces the ideas and papers that underlie these modern
-  models.
+  This article traces the ideas and papers that underlie these modern models.
 </p>
 
 <h2 id="background-gaussian-diffusion">Background: Gaussian Diffusion</h2>
 
 <p>
   Before introducing diffusion for language, we give a brief overview of
-  Gaussian diffusion for image generation, and then introduce discrete diffusion
-  by analogy. The high-level idea is to start from noise and refine it, which is
-  easier than generating data in one shot. Formally, a diffusion model is defined
-  by a <strong>forward process</strong> that adds Gaussian noise to an image and a
-  <strong>reverse process</strong> that learns to separate the noise from the
-  image, i.e., that predicts the noise and/or the clean image (the two are
-  equivalent, since one determines the other given the noisy input). Generation
-  repeats this separation step until we recover a clean image.
+  Gaussian diffusion for image generation. We will then build up discrete diffusion by analogy. 
+</p>
+  
+<h4>Generating by iterative denoising</h4>
+  The central concept underlying diffusion models
+  is <strong>denoising</strong>. Instead of painting an image in one shot, a diffusion model produces images in many steps, starting from pure random noise and removing a little of it at
+  every step until a coherent image emerges. Generating an image in many
+  small steps is far simpler than generating it in one shot: this is what makes diffusion models so effective.
+</p>
+
+<p>
+  How does a model learn to denoise? The trick is to teach it by showing examples of noise being gradually transformed into an image. Diffusion achieves this via two complementary processes. First, a
+  <strong>forward process</strong> starts with a clean source image, and generates a step-by-step transformation of that image into pure noise. Second, a
+  <strong>reverse process</strong> is trained on image-to-noise transformations generated by the forward process so that it learns to transform pure noise into an image.
+</p>
+
+<h4>Forward process</h4>
+<p>
+  The forward process takes a clean training image and generates a sequence of noisier images that trace a transformation from clean data to pure noise. It achieves this by starting with a clean image and
+  mixing in an increasing amount of random <strong>Gaussian noise</strong> at each step until the image dissolves into pure static. This step requires no learning at all &mdash; we are simply
+  adding noise &mdash; but it is enormously useful, because it manufactures an
+  endless supply of training data: examples of images being transformed into noise and vice versa.
 </p>
 
 <figure>
   <img src="{{ '/assets/img/diffusion-noise-dog.png' | relative_url }}" alt="Progressive noising of an image" />
   <figcaption>The forward process gradually corrupts a clean image into pure Gaussian noise.</figcaption>
 </figure>
+
+<h4>Reverse process</h4>
+<p>
+  The reverse process is where the actual learning happens. We train a machine learning model to transform noise into images by following the steps generated by the forward process, except in reverse.
+  
+  Concretely, given a noisy image,
+  we train the model to <strong>separate the noise from the underlying image</strong>
+  &mdash; equivalently, to predict either the noise that was added or the clean image
+  itself, since given the noisy input, knowing one determines the other. 
+  
+  Once the
+  model can do this, generation is simple: start from pure noise, ask the model to
+  estimate and strip away a bit of it, and repeat. Each pass nudges the sample a
+  little closer to something that looks like real data, until a clean image
+  remains.
+</p>
+
 <figure>
   <img src="{{ '/assets/img/diffusion-forward-backward.png' | relative_url }}" alt="Forward and reverse diffusion" />
-  <figcaption>Generation reverses the forward process, separating data from noise step by step.</figcaption>
+  <figcaption>
+    Together, the forward process (adding noise) and the reverse process
+    (removing it) define diffusion: generation reverses corruption, separating
+    data from noise step by step.
+  </figcaption>
 </figure>
+
+<p>
+  This forward/reverse recipe &mdash; corrupt data with noise, then learn to
+  reverse the corruption one step at a time &mdash; is the blueprint for every
+  diffusion model.
+</p>
 
 <h2 id="simple-masked-diffusion-models">Simple Masked Diffusion Models</h2>
 
 <p>
-  Applying the same approach to discrete data is not entirely straightforward.
-  Our data now consists of discrete symbols, but the noise used in classical
+ The main obstacle in bringing diffusion to
+  language is deciding what "noise" should even mean for discrete tokens.
+  For example, the noise used in classical
   diffusion is Gaussian, and adding continuous Gaussian noise to categorical
-  variables does not really make sense. A key challenge in discrete diffusion is
-  finding a way to generalize noise to discrete data. Below we introduce one
-  simple approach that defines noise via <strong>masking</strong> &mdash; a class of
-  model that is very simple yet currently produces some of the highest-quality
-  results. We popularized this approach in our 2024 paper on simplified masked
-  diffusion <d-cite key="sahoo2024simple"></d-cite>, and it now forms the basis of
-  most open-source diffusion language models.
+  variables is not well-defined. Below we
+  introduce one simple approach that defines noise via <strong>masking</strong>
+  &mdash; a model that is remarkably simple yet currently among the
+  highest-quality discrete diffusion methods. Our group popularized this approach<d-cite key="sahoo2024simple"></d-cite>,
+  and it now forms the basis of most open-source diffusion language models.
 </p>
 
 <h3 id="masked-diffusion-in-a-nutshell">Masked Diffusion in a Nutshell</h3>
@@ -160,19 +196,18 @@ toc:
 
 <p>
   To generate data from this model, we start with a fully masked sequence. We ask
-  the model to fill in all the blanks, which initially forms a very poor guess at
-  a text sequence. We then remask most of this sequence, crucially leaving a few
-  words unmasked. From then on, we repeat this process many times:
+  the model to fill in all the blanks, which yields a rough initial guess. We then
+  remask most of the sequence, crucially leaving a few words unmasked, and repeat
+  this process many times:
 </p>
 <ol>
   <li>Take the current iterate, in which part of the sequence is masked, and fill in the blanks.</li>
-  <li>Remask every blank word, but leave a few more unmasked than were present before.</li>
+  <li>Remask the sequence again, but leave a few more tokens unmasked than before.</li>
 </ol>
 <p>
-  Over time, the sequence we are iterating on has more unmasked than masked
-  positions, and it eventually converges to a sequence of text corresponding to a
-  sample from our model. Generation therefore looks like starting from a sequence
-  full of blanks and gradually filling in words in an arbitrary order.
+  With each round the sequence has fewer masked positions, until it converges to a
+  clean sample from our model. Generation therefore looks like starting from a
+  sequence full of blanks and gradually filling in words in an arbitrary order.
 </p>
 
 <figure>
@@ -196,12 +231,14 @@ toc:
 
 <h4>Forward process</h4>
 <p>
-  The amount of masking depends on a signal-to-noise ratio $\alpha_t$, which
-  starts at $1$ when $t = 0$ and decreases to $0$ when $t = 1$. We implement the
-  process as a Markov chain over latent variables $z_t$: for $s < t$, the chain
-  defines $q(z_s \mid z_t)$ by masking each token with probability
-  $\alpha_s - \alpha_t$. Running this Markov chain for a number of steps produces
-  a trajectory going from clean data to fully masked noise.
+  The amount of masking is governed by a schedule $\alpha_t$, the probability that
+  a token remains unmasked, which starts at $1$ when $t = 0$ and decreases to $0$
+  when $t = 1$ (analogous to the signal-to-noise ratio in Gaussian diffusion). We
+  implement the process as a Markov chain over latent variables $z_t$: for
+  $s < t$, the chain defines $q(z_t \mid z_s)$ by masking each still-unmasked token
+  of $z_s$ with probability $(\alpha_s - \alpha_t)/\alpha_s$. Running this Markov
+  chain for a number of steps produces a trajectory going from clean data to fully
+  masked noise.
 </p>
 <figure>
   <img src="{{ '/assets/img/mdlm-forward-1.png' | relative_url }}" alt="Masked diffusion forward process" />
@@ -237,16 +274,31 @@ toc:
   other latent-variable models, the likelihood is intractable, so we optimize an
   evidence lower bound (ELBO), which for masked diffusion has a surprisingly
   simple form: an average, over all masking rates $t$, of BERT-style
-  cross-entropy losses on the masked positions, each normalized by $1 - \alpha_t$
-  <d-cite key="sahoo2024simple"></d-cite>. Differently from BERT, this loss is
-  averaged over every possible masking rate rather than a single fixed one, and
-  the $1-\alpha_t$ term normalizes for the number of masked tokens the loss is
-  computed over at that rate.
+  cross-entropy losses on the masked positions <d-cite key="sahoo2024simple"></d-cite>.
+  Unlike BERT, this loss is averaged over every possible masking rate rather than a
+  single fixed one, and each term is normalized by $1 - \alpha_t$ to account for how
+  many tokens are masked at that rate.
 </p>
-<figure>
-  <img src="{{ '/assets/img/mdlm-elbo.png' | relative_url }}" alt="MDLM ELBO" />
-  <figcaption>The MDLM ELBO reduces to a weighted average of masked-token cross-entropy losses.</figcaption>
-</figure>
+<p>
+  Concretely, the MDLM ELBO reduces to a weighted average of masked-token
+  cross-entropy losses:
+</p>
+$$
+\mathcal{L}_\text{NELBO}
+= \mathbb{E}_{t \sim \mathcal{U}[0,1]}\;
+  \mathbb{E}_{q(z_t \mid x)}
+  \left[
+    \frac{1}{1 - \alpha_t}
+    \sum_{i \,:\, z_t^i = \mathbf{m}}
+    -\log p_\theta\!\left(x^i \mid z_t\right)
+  \right],
+$$
+<p>
+  where the inner sum runs over the masked positions of $z_t$ (those equal to the
+  mask token $\mathbf{m}$), the term $-\log p_\theta(x^i \mid z_t)$ is the standard
+  cross-entropy of the true token $x^i$, and the outer expectation averages over
+  masking rates $t$.
+</p>
 <figure>
   <img src="{{ '/assets/img/mdlm-joint-1.png' | relative_url }}" alt="MDLM joint latent-variable model" />
   <figcaption>The forward and reverse processes jointly define a latent-variable model over $(x, z_1, \dots, z_T)$.</figcaption>
