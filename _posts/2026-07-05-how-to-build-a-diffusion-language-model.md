@@ -1,7 +1,7 @@
 ---
 layout: distill
 title: "How to Build a Diffusion Language Model"
-description: "An introduction to diffusion language models and the research advances that underlie today's diffusion LLMs. We describe the building blocks of recent open source models, starting from simple masking diffusion, and including techniques for iterative refinement, post-training, and variable-length generation. This defines the main ingredients needed to build a diffusion language model today."
+description: "An introduction to diffusion language models and the research advances that underlie today's diffusion LLMs. We describe the building blocks of recent open source models, starting from simple masking diffusion, and including techniques for iterative refinement, post-training, and variable-length generation. This defines the main ingredients needed to build a diffusion language model today. Material is adapted from workshop talks and lectures at ICLR 2026 and MLSS 2026."
 date: 2026-07-05
 featured: true
 
@@ -11,8 +11,28 @@ authors:
     affiliations:
       name: Cornell University
       url: "https://www.cs.cornell.edu/"
+  - name: Marianne Arriola
+    url: "http://m-arriola.com/"
+    affiliations:
+      name: Cornell University
+      url: "https://www.cs.cornell.edu/"
+  - name: Yair Schiff
+    url: "https://yair-schiff.github.io/"
+    affiliations:
+      name: Cornell University
+      url: "https://www.cs.cornell.edu/"
+  - name: Guanghan Wang
+    url: "https://guanghanwang.github.io/"
+    affiliations:
+      name: Cornell University
+      url: "https://www.cs.cornell.edu/"
 
 bibliography: dllm2-blog.bib
+
+_styles: >
+  d-article d-contents {
+    grid-row: auto / span 8;
+  }
 
 toc:
   - name: "Introduction: Autoregressive and Diffusion Language Models"
@@ -21,7 +41,7 @@ toc:
     subsections:
       - name: "Masked Diffusion in a Nutshell"
       - name: "Understanding Masked Diffusion as Generalizing Gaussian Diffusion"
-  - name: "Building a Diffusion Language Model for the Real World"
+  - name: "Building a Real-World Diffusion Language Model"
     subsections:
       - name: "Block Diffusion for Flexible-Length Generation"
       - name: "Architectures: Encoder, Decoder, and Encoder-Decoder"
@@ -35,18 +55,13 @@ toc:
       - name: "Diffusion-Based Large Language Models"
   - name: "Conclusion & Parting Thoughts"
     subsections:
-      - name: "Will Diffusion Lead to Higher Intelligence? A Scaling-Law Perspective"
+      - name: "Is Diffusion A Path Towards More Intelligent Models? A Scaling-Law Perspective"
 ---
-
-<p>
-  <em>
-  Adapted from ICLR 2026 &amp; MLSS 2026 talks.</em>
-</p>
 
 <h2 id="introduction-autoregressive-and-diffusion-language-models">Introduction: Autoregressive and Diffusion Language Models</h2>
 
 <p>
-  Two families of generative AI algorithms dominate today. For continuous data
+  Two families of generative AI algorithms are widely used today. For continuous data
   such as images or video, the state-of-the-art approach is based on
   <strong>diffusion models</strong>. For discrete data such as text or code, the
   standard approach is instead <strong>autoregressive models</strong>. This
@@ -97,29 +112,40 @@ toc:
 <h2 id="background-gaussian-diffusion">Background: Gaussian Diffusion</h2>
 
 <p>
-  Before introducing diffusion for language, we give a brief overview of
-  Gaussian diffusion for image generation. We will then build up discrete diffusion by analogy. 
+  Before introducing diffusion for language, we start with a brief overview of
+  Gaussian diffusion for image generation. We will then build up discrete
+  diffusion by analogy.
 </p>
-  
+
 <h4>Generating by iterative denoising</h4>
-  The central concept underlying diffusion models
-  is <strong>denoising</strong>. Instead of painting an image in one shot, a diffusion model produces images in many steps, starting from pure random noise and removing a little of it at
-  every step until a coherent image emerges. Generating an image in many
-  small steps is far simpler than generating it in one shot: this is what makes diffusion models so effective.
+<p>
+  The central concept underlying diffusion models is <strong>denoising</strong>.
+  Instead of painting an image in one shot, a diffusion model produces images
+  step by step, starting from pure random noise and removing a little of it at
+  every step until a coherent image emerges. Generating an image through many
+  small steps turns out to be far simpler than producing it all at once, and this
+  is what makes diffusion models so effective.
 </p>
 
 <p>
-  How does a model learn to denoise? The trick is to teach it by showing examples of noise being gradually transformed into an image. Diffusion achieves this via two complementary processes. First, a
-  <strong>forward process</strong> starts with a clean source image, and generates a step-by-step transformation of that image into pure noise. Second, a
-  <strong>reverse process</strong> is trained on image-to-noise transformations generated by the forward process so that it learns to transform pure noise into an image.
+  How does a model learn to denoise? The trick is to teach it by showing examples of 
+  noise being gradually transformed into an image. Diffusion achieves this via
+  two complementary processes. First, a <strong>forward process</strong> takes a
+  clean source image and turns it into pure noise, one step at a time. Second, a
+  <strong>reverse process</strong> learns to invert this transformation, turning
+  pure noise back into an image; it is trained on the image-to-noise trajectories
+  produced by the forward process.
 </p>
 
 <h4>Forward process</h4>
 <p>
-  The forward process takes a clean training image and generates a sequence of noisier images that trace a transformation from clean data to pure noise. It achieves this by starting with a clean image and
-  mixing in an increasing amount of random <strong>Gaussian noise</strong> at each step until the image dissolves into pure static. This step requires no learning at all &mdash; we are simply
-  adding noise &mdash; but it is enormously useful, because it manufactures an
-  endless supply of training data: examples of images being transformed into noise and vice versa.
+  The forward process takes a clean training image and produces a sequence of
+  increasingly noisy images that trace a path from clean data to pure noise. It
+  does this by mixing in a growing amount of random <strong>Gaussian noise</strong>
+  at each step, until the image dissolves into pure static. This step requires no
+  learning at all &mdash; we are simply adding noise &mdash; yet it is enormously
+  useful, because it manufactures an endless supply of training data: examples of
+  images being transformed into noise, and vice versa.
 </p>
 
 <figure>
@@ -129,11 +155,12 @@ toc:
 
 <h4>Reverse process</h4>
 <p>
-  The reverse process is where the actual learning happens. We train a machine learning model to transform noise into images by following the steps generated by the forward process, except in reverse.
+  The reverse process is where the actual learning happens. We train a model to
+  transform noise into images by following the steps produced by the forward process in reverse.
   
-  Concretely, given a noisy image,
-  we train the model to <strong>separate the noise from the underlying image</strong>
-  &mdash; equivalently, to predict either the noise that was added or the clean image
+  Concretely, given a noisy image, we train a machine learning model to
+  <strong>separate the noise from the underlying image</strong> &mdash;
+  equivalently, to predict either the noise that was added or the clean image
   itself, since given the noisy input, knowing one determines the other. 
   
   Once the
@@ -162,30 +189,37 @@ toc:
 
 <p>
  The main obstacle in bringing diffusion to
-  language is deciding what "noise" should even mean for discrete tokens.
+  language is deciding what "noise" should mean for discrete tokens.
   For example, the noise used in classical
   diffusion is Gaussian, and adding continuous Gaussian noise to categorical
   variables is not well-defined. Below we
-  introduce one simple approach that defines noise via <strong>masking</strong>
-  &mdash; a model that is remarkably simple yet currently among the
-  highest-quality discrete diffusion methods. Our group popularized this approach<d-cite key="sahoo2024simple"></d-cite>,
+  introduce one simple yet effective  approachthat defines noise via <strong>masking</strong>. Our group popularized this approach<d-cite key="sahoo2024simple"></d-cite>,
   and it now forms the basis of most open-source diffusion language models.
 </p>
 
 <h3 id="masked-diffusion-in-a-nutshell">Masked Diffusion in a Nutshell</h3>
 <p>
   The easiest way to understand masked diffusion is as an <strong>unmasking
-  transformer</strong>. We train the model by starting from a clean sequence and
-  masking a random fraction of the tokens, then asking a bidirectional transformer
-  to fill in the masked values. If you are familiar with BERT, this is essentially
-  BERT with a randomized masking rate &mdash; but unlike BERT, the resulting model is
-  generative. You can think of masked diffusion as a <em>generative BERT</em>.
+  transformer</strong>. We train the model by taking clean sequences, masking a
+  random fraction of their tokens, and asking a bidirectional transformer to fill in
+  the blanks. If you know BERT, this is essentially BERT with a randomized masking
+  rate &mdash; but unlike BERT, the resulting model is generative. You can think of
+  masked diffusion as a <em>generative BERT</em>.
 </p>
 
 <figure>
   <img src="{{ '/assets/img/mdlm-overview-training.png' | relative_url }}" alt="Masked diffusion training" />
   <figcaption>Training: mask a random fraction of tokens and reconstruct them.</figcaption>
 </figure>
+
+<p>
+  Once we trained the unmasking transformer, we can generate text by starting from a fully masked sequence and repeating two steps many
+  times:
+</p>
+<ol>
+  <li><strong>Infilling</strong>: Ask the model to fill in every blank in the current sequence, yielding a rough guess of the clean tokens.</li>
+  <li><strong>Remasking</strong>: Randomly re-noise the infilled sequence by replacing tokens with masks, but keep a few more tokens unmasked than in the previous round.</li>
+</ol>
 <figure>
   <img src="{{ '/assets/img/mdlm-overview-sampling.png' | relative_url }}" alt="Masked diffusion sampling" />
   <figcaption>
@@ -193,21 +227,10 @@ toc:
     an arbitrary order.
   </figcaption>
 </figure>
-
 <p>
-  To generate data from this model, we start with a fully masked sequence. We ask
-  the model to fill in all the blanks, which yields a rough initial guess. We then
-  remask most of the sequence, crucially leaving a few words unmasked, and repeat
-  this process many times:
-</p>
-<ol>
-  <li>Take the current iterate, in which part of the sequence is masked, and fill in the blanks.</li>
-  <li>Remask the sequence again, but leave a few more tokens unmasked than before.</li>
-</ol>
-<p>
-  With each round the sequence has fewer masked positions, until it converges to a
-  clean sample from our model. Generation therefore looks like starting from a
-  sequence full of blanks and gradually filling in words in an arbitrary order.
+  Each round leaves fewer positions masked, until the sequence converges to a clean
+  sample from the model. Generation thus amounts to starting from a sequence full of
+  blanks and gradually filling in words in an arbitrary order.
 </p>
 
 <figure>
@@ -223,27 +246,46 @@ toc:
   <figcaption>Repeating this fill-in/remask loop, the fraction of unmasked tokens grows each round until the sequence converges to a clean sample.</figcaption>
 </figure>
 
-<h3 id="understanding-masked-diffusion-as-generalizing-gaussian-diffusion">Understanding Masked Diffusion as Generalizing Gaussian Diffusion</h3>
+<h3 id="understanding-masked-diffusion-as-generalizing-gaussian-diffusion">Understanding Masked Diffusion: A Probabilistic Perspective</h3>
 <p>
-  We can understand why this process works by framing it as an analog of Gaussian
-  diffusion, again consisting of a forward and reverse process.
+  We
+  can also understand a bit better <em>why</em> this process works by framing it as
+  an analog of the Gaussian diffusion model we saw earlier. 
+  Just like Gaussian
+  diffusion, masked diffusion can be described as a model consisting of
+  a forward and a reverse process.
 </p>
 
 <h4>Forward process</h4>
 <p>
-  The amount of masking is governed by a schedule $\alpha_t$, the probability that
-  a token remains unmasked, which starts at $1$ when $t = 0$ and decreases to $0$
-  when $t = 1$ (analogous to the signal-to-noise ratio in Gaussian diffusion). We
-  implement the process as a Markov chain over latent variables $z_t$: for
-  $s < t$, the chain defines $q(z_t \mid z_s)$ by masking each still-unmasked token
-  of $z_s$ with probability $(\alpha_s - \alpha_t)/\alpha_s$. Running this Markov
-  chain for a number of steps produces a trajectory going from clean data to fully
-  masked noise.
+  The goal of the forward process is to generate training data for the reverse
+  process. Its output is a trajectory that starts from a datapoint and ends at
+  a sequence of pure noise; the reverse process will then be trained to produce this
+  trajectory in reverse.
+</p>
+<p>
+  The key challenge is deciding what "noisy" should mean. In Gaussian diffusion, we
+  added varying amounts of white noise to an image. In masked diffusion, we instead
+  randomly mask a fraction of the tokens in a discrete sequence. The amount of
+  masking is governed by a schedule $\alpha_t$ &mdash; the probability that a given
+  token remains unmasked &mdash; which plays the role of the signal-to-noise ratio
+  in Gaussian diffusion. It starts at $1$ when $t = 0$ (a clean sequence) and
+  decreases to $0$ when $t = 1$ (a fully masked sequence). The time variable $t$
+  indexes a path from clean to noisy data, and at time $t$ a partially masked
+  sequence has, in expectation, a fraction $\alpha_t$ of its tokens unmasked.
 </p>
 <figure>
   <img src="{{ '/assets/img/mdlm-forward-1.png' | relative_url }}" alt="Masked diffusion forward process" />
   <figcaption>The forward process masks tokens at a rate governed by $\alpha_t$.</figcaption>
 </figure>
+<p>
+  We implement this process as a Markov chain over a sequence of
+  variables $z_t$ indexed by $t$, with $z_0$ being the clean, unmasked sequence. For
+  $s < t$, the chain defines $q(z_t \mid z_s)$ by masking each still-unmasked token
+  of $z_s$ with probability $(\alpha_s - \alpha_t)/\alpha_s$. Running this Markov
+  chain for a number of steps produces a trajectory going from clean data to fully
+  masked noise.
+</p>
 <figure>
   <img src="{{ '/assets/img/mdlm-forward-2.png' | relative_url }}" alt="Masked diffusion forward process, latent chain" />
   <figcaption>The forward process defines a Markov chain over increasingly masked latent sequences $z_t$.</figcaption>
@@ -251,16 +293,24 @@ toc:
 
 <h4>Reverse process</h4>
 <p>
-  As in Gaussian diffusion, we train the reverse process to undo masking. Using
-  Bayes' rule we can derive the optimal posterior $q(z_s \mid z_t, x)$ when the
-  clean sequence $x$ is known: given a partially masked $z_t$, we peek at $x$ to
-  find the true clean tokens, and form $z_s$ by unmasking each masked position of
-  $z_t$ with probability $(\alpha_s - \alpha_t) / (1 - \alpha_t)$. In practice we
-  don't know $x$ at generation time, so we train a model $x_\theta(z_t)$ to
-  predict it, and define the reverse process as
-  $p(z_s \mid z_t) = q\big(z_s \mid z_t, x_\theta(z_t)\big)$. This mathematical
-  definition recovers exactly the fill-in/remask sampling algorithm described
-  above.
+  Next, as in Gaussian diffusion, we train the reverse process to walk the sequence
+  of increasingly masked latents in reverse &mdash; starting from a fully masked
+  sequence and ultimately generating outputs similar to clean data.
+</p>
+<p>
+  Using Bayes' rule, we can derive an ideal reverse process $q(z_s \mid z_t, x)$ when the clean sequence $x$ is <em>known</em> <d-cite key="sahoo2024simple"></d-cite>. Given a partially masked $z_t$, this process will
+  peek at $x$ to find the true clean tokens, and form $z_s$ by replacing each masked
+  position of $z_t$ with its value in $x$ with probability $(\alpha_s - \alpha_t) / (1 - \alpha_t)$, and otherwise leaving it masked.
+</p>
+<p>
+  In practice, the final output $x$ is obviously unknown when we generate it. We therefore train a model $x_\theta(z_t)$ to predict the final clean sequence given the
+  current state $z_t$ and apply the ideal reverse process
+  $q(z_s \mid z_t, x)$ using the estimate $x_\theta(z_t)$ in place of the real
+  $x$. More formally, we define the reverse process as a probability
+  $p(z_s \mid z_t) = q\big(z_s \mid z_t, x_\theta(z_t)\big)$. This
+  mathematical definition recovers exactly the sampling algorithm we described
+  earlier: at each step, we use the model $x_\theta(z_t)$ to fill in the blanks of
+  $z_t$, and we keep a subset of these filled-in tokens in $z_s$.
 </p>
 <figure>
   <img src="{{ '/assets/img/mdlm-reverse-1.png' | relative_url }}" alt="Masked diffusion reverse process" />
@@ -269,47 +319,74 @@ toc:
 
 <h4>A probabilistic model for masked diffusion</h4>
 <p>
-  Together, the forward and reverse processes define a latent-variable model
-  $p(x, z_1, \dots, z_T)$; generation corresponds to ancestral sampling. As with
-  other latent-variable models, the likelihood is intractable, so we optimize an
-  evidence lower bound (ELBO), which for masked diffusion has a surprisingly
-  simple form: an average, over all masking rates $t$, of BERT-style
-  cross-entropy losses on the masked positions <d-cite key="sahoo2024simple"></d-cite>.
-  Unlike BERT, this loss is averaged over every possible masking rate rather than a
-  single fixed one, and each term is normalized by $1 - \alpha_t$ to account for how
-  many tokens are masked at that rate.
-</p>
-<p>
-  Concretely, the MDLM ELBO reduces to a weighted average of masked-token
-  cross-entropy losses:
-</p>
-$$
-\mathcal{L}_\text{NELBO}
-= \mathbb{E}_{t \sim \mathcal{U}[0,1]}\;
-  \mathbb{E}_{q(z_t \mid x)}
-  \left[
-    \frac{1}{1 - \alpha_t}
-    \sum_{i \,:\, z_t^i = \mathbf{m}}
-    -\log p_\theta\!\left(x^i \mid z_t\right)
-  \right],
-$$
-<p>
-  where the inner sum runs over the masked positions of $z_t$ (those equal to the
-  mask token $\mathbf{m}$), the term $-\log p_\theta(x^i \mid z_t)$ is the standard
-  cross-entropy of the true token $x^i$, and the outer expectation averages over
-  masking rates $t$.
+  Putting these pieces together gives us the mathematical definition of a
+  masked diffusion language model (MDLM). The forward process $q(z_t \mid z_s)$
+  produces a trajectory from clean to fully masked data, and the reverse process
+  $p(z_s \mid z_t)$ learns to undo it. Moreover, the reverse process
+  defines a latent variable model whose joint distribution
+  $p(x, z_1, \dots, z_T)$ factorizes as a product of terms $p(z_s \mid z_t)$
+  for some number of time steps $T$. Generation in this diffusion model corresponds
+  to ancestral sampling.
 </p>
 <figure>
   <img src="{{ '/assets/img/mdlm-joint-1.png' | relative_url }}" alt="MDLM joint latent-variable model" />
   <figcaption>The forward and reverse processes jointly define a latent-variable model over $(x, z_1, \dots, z_T)$.</figcaption>
 </figure>
 <p>
-  Most interestingly, this ELBO enables a principled likelihood (perplexity)
-  comparison between autoregressive and diffusion language models &mdash; the
-  standard metric for evaluating language models. While for a long time there was
-  a substantial gap in perplexity between diffusion and autoregressive language
-  models, simplified masked diffusion models were among the first to close much
-  of this gap <d-cite key="sahoo2024simple"></d-cite>.
+  Given a probabilistic model, we can look at its likelihood
+  $\log p(x)$ as a way to assess its fit to the data. In latent variable models this is typically intractable, so we resort
+  to approximations via variational inference. For a masked diffusion language
+  model, the evidence lower bound (ELBO) used to approximate the likelihood has a
+  surprisingly simple form <d-cite key="sahoo2024simple"></d-cite>:
+</p>
+
+$$
+\mathcal{L}_\text{ELBO}
+= \mathbb{E}_{t \sim \mathcal{U}[0,1]}\;
+  \mathbb{E}_{q(z_t \mid x)}
+  \left[
+    \frac{1}{1 - \alpha_t}\,
+    \log p_\theta\!\left(x \mid z_t\right)
+  \right].
+$$
+
+<p>
+  Let's unpack this formula. The inner term $\log p_\theta(x \mid z_t)$ is the
+  likelihood of a clean sequence $x$ under our model, given a partially masked
+  sequence $z_t$ sampled from the forward process. In other words, it is the
+  cross-entropy loss between the predictions of our unmasking transformer and the
+  true tokens &mdash; this is exactly the BERT loss!
+</p>
+<p>
+  Differently from BERT, this loss is averaged over all $t$, and hence over all
+  possible masking rates, rather than a single fixed one. It is also normalized by
+  $1 - \alpha_t$, the expected fraction of tokens that are masked at rate $t$; this
+  factor ensures that each BERT loss is normalized for the number of tokens over
+  which the loss is taken.
+</p>
+
+<h4>Summarizing and Evaluating Masked Diffusion</h4>
+
+<p>
+  In summary, MDLM is very similar to BERT, with two key differences:
+</p>
+<ul>
+  <li>
+    It admits principled sampling algorithms, corresponding to ancestral sampling
+    in a latent variable model.
+  </li>
+  <li>
+    Training uses a randomized masking rate, which corresponds to a
+    principled variational lower bound on the log-likelihood.
+  </li>
+</ul>
+<p>
+  Most interestingly, the evidence lower bound enables a principled comparison
+  between autoregressive and diffusion language models using log-likelihood (or,
+  equivalently, perplexity) &mdash; the standard metric for evaluating language
+  models. While for a long time there was a substantial gap in perplexity between
+  diffusion and autoregressive language models, simplified masked diffusion models
+  were among the first to close much of this gap <d-cite key="sahoo2024simple"></d-cite>.
 </p>
 <figure>
   <img src="{{ '/assets/img/mdlm-elbo-ppl.png' | relative_url }}" alt="MDLM perplexity comparison" />
@@ -319,7 +396,7 @@ $$
   </figcaption>
 </figure>
 
-<h2 id="building-a-diffusion-language-model-for-the-real-world">Building a Diffusion Language Model for the Real World</h2>
+<h2 id="building-a-real-world-diffusion-language-model">Building a Real-World Diffusion Language Model</h2>
 <p>
   As defined above, masked diffusion models are helpful for building intuition,
   but they are not production-ready: they generate only fixed-length sequences,
@@ -331,53 +408,69 @@ $$
 
 <h3 id="block-diffusion-for-flexible-length-generation">Block Diffusion for Flexible-Length Generation</h3>
 <p>
-  Block diffusion performs diffusion over <strong>blocks</strong> conditioned on
-  previously generated tokens, enabling arbitrary-length generation
-  <d-cite key="arriola2025block"></d-cite>. Blocks can range from a dozen to
-  thousands of tokens depending on the application &mdash; in biological
-  applications, block size might be set to match the length of the interactions
-  one wants to capture, while in language modeling it is often chosen to maximize
-  GPU utilization. Block diffusion also naturally supports KV caching: once a
-  block is generated, its keys and values can be cached and reused when
-  generating future blocks, just as in autoregressive models.
+  The first issue that arises with standard MDLMs is their limitation
+  to generating fixed-length sequences. Block diffusion addresses this limitation by performing
+  diffusion over <strong>blocks</strong>, conditioned on previously generated
+  tokens <d-cite key="arriola2025block"></d-cite>. These blocks can be of arbitrary
+  size, ranging from a dozen to thousands of tokens, and should ideally depend on
+  the application domain.
 </p>
 <figure>
   <img src="{{ '/assets/img/gemma-block-diffusion.png' | relative_url }}" alt="Block diffusion in Gemma Diffusion" />
   <figcaption>Block diffusion, as used in Gemma Diffusion, generates one block at a time while caching earlier blocks.</figcaption>
 </figure>
 <p>
-  Other approaches to variable-length generation rely on connections between
-  masked diffusion models and any-order autoregressive models. For instance,
-  <strong>set diffusion</strong> extends block diffusion to operate over arbitrary
-  sets of positions rather than left-to-right blocks. <strong>Edit Flows</strong>
-  instead models generation as a sequence of insertion, deletion, and
+  For example, in biological applications, we might have prior knowledge about the length of the
+  interactions we want to capture, and set the block size to the minimum length
+  needed to capture them. In language modeling, we may instead be interested in
+  maximizing GPU utilization; in that case we would choose the block size so that
+  the arithmetic intensity of our forward pass (which also depends on the batch
+  size) matches that of the underlying hardware.
+</p>
+<p>
+  Additionally, block diffusion naturally supports <strong>KV caching</strong>, a
+  technique that accelerates sequence generation in autoregressive models. Once a block has been generated using a transformer architecture, its keys and
+  values can be cached and reused when generating future blocks.
+</p>
+<p>
+Other approaches to variable-length generation rely on connections between masked diffusion models and any-order autoregressive models. For instance,
+  <strong>Set Diffusion</strong> extends block diffusion to operate over arbitrary
+  sets of positions rather than left-to-right blocks. Other approaches, such as <strong>Edit Flows</strong> <d-cite key="havasi2025editflows"></d-cite> or <strong>FlexMDM</strong><d-cite key="kim2025flexmdm"></d-cite>
+  instead model generation as a sequence of insertion, deletion, and
   substitution operations, which lets the model grow or shrink the sequence as it
-  refines it <d-cite key="havasi2025editflows"></d-cite>. <strong>FlexMDM</strong>
-  takes a related approach within the masked diffusion framework itself,
-  augmenting the reverse process with an explicit insertion mechanism so that
-  pretrained MDLMs can be retrofitted to generate variable-length sequences while
-  keeping any-order sampling <d-cite key="kim2025flexmdm"></d-cite>.
+  refines it.
 </p>
 
 <h3 id="architectures-encoder-decoder-and-encoder-decoder">Architectures: Encoder, Decoder, and Encoder&ndash;Decoder</h3>
 <p>
   Standard masked diffusion models are effectively <strong>encoder-only</strong>
-  (like BERT), in contrast to decoder-only autoregressive models (like GPT). A key
-  insight is that diffusion performs two kinds of computation &mdash; representing
-  already-generated tokens and denoising corrupted ones &mdash; which motivates an
-  <strong>encoder&ndash;decoder</strong> architecture with a heavy encoder and a
-  lightweight decoder. This design is at the core of state-of-the-art open-source
-  diffusion LLMs such as Gemma Diffusion <d-cite key="google2026diffusiongemma"></d-cite>
-  and Nemotron Diffusion <d-cite key="fu2026nemotronlabsdiffusion"></d-cite>.
+  (like BERT), in contrast to decoder-only autoregressive models (like GPT).
+  Using an encoder-only architecture requires sampling algorithms that invoke the
+  full network at every denoising step, which can incur a relatively high
+  computational cost.
+</p>
+<p>
+ A key
+  insight is that diffusion performs two kinds of computation: (1) computing a
+  representation of the tokens that have been generated so far, and (2) denoising
+  the corrupted tokens. This observation suggests using separate modules for each
+  task. The result is an <strong>encoder&ndash;decoder</strong> architecture, which
+  relies on an encoder to represent clean tokens and a lightweight decoder to
+  iteratively refine a noised sequence. Encoder&ndash;decoder architectures are at
+  the core of state-of-the-art open-source diffusion LLMs, such as Gemma Diffusion
+  <d-cite key="google2026diffusiongemma"></d-cite> and the recent Nemotron
+  Diffusion models <d-cite key="fu2026nemotronlabsdiffusion"></d-cite>.
 </p>
 <figure>
   <img src="{{ '/assets/img/gemma-encdec-1.png' | relative_url }}" alt="Encoder-decoder architecture (1)" />
   <figcaption>An encoder represents clean tokens while a lightweight decoder refines the noised sequence.</figcaption>
 </figure>
-<figure>
-  <img src="{{ '/assets/img/gemma-encdec-2.png' | relative_url }}" alt="Encoder-decoder architecture (2)" />
-  <figcaption>The encoder&ndash;decoder split also reduces the FLOPs needed to train block diffusion models.</figcaption>
-</figure>
+<p>
+  In addition to accelerating discrete diffusion inference, this architecture
+  enables faster <em>training</em> of block diffusion models: after partitioning a
+  sequence into blocks, we pass the blocks into a smaller decoder at training time,
+  which reduces the number of FLOPs needed for training.
+</p>
 
 <h3 id="iterative-refinement-and-built-in-error-correction">Iterative Refinement and Built-In Error Correction</h3>
 <p>
@@ -388,25 +481,31 @@ $$
   restore this capability.
 </p>
 
+<figure>
+  <img src="{{ '/assets/img/mdlm-joint-1.png' | relative_url }}" alt="MDLM joint latent-variable model" />
+  <figcaption>Masked diffusion does not support error correction [need to expand this]</figcaption>
+</figure>
+
 <h4>Remasking Diffusion</h4>
 <p>
   The simplest fix is <strong>remasking</strong>: at each step we keep some newly
   unmasked tokens but also re-mask a small subset of previously unmasked tokens,
-  letting them be regenerated. This can be applied to pretrained MDLMs in a
-  principled way (as a predictor&ndash;corrector chain) and endows discrete diffusion
-  with a form of inference-time compute scaling: increasing the number of
-  sampling steps lets remasking approach autoregressive quality, while under a
-  tight compute budget it better preserves quality than plain MDLM sampling
-  <d-cite key="wang2025remasking"></d-cite>.
+  letting them be regenerated. Concretely, consider the example below, in which a masked diffusion model introduces a grammatical error. With remasking, this token flips to a mask and then gets corrected when the model receives additional context.
 </p>
 <figure>
   <img src="{{ '/assets/img/mdlm-remasking-example.png' | relative_url }}" alt="Remasking corrects an error" />
   <figcaption>Remasking lets the model flip an erroneous token back to a mask and correct it with more context.</figcaption>
 </figure>
-<figure>
-  <img src="{{ '/assets/img/mdlm-remasking-sampling.png' | relative_url }}" alt="Remasking sampling" />
-  <figcaption>Remasking as a predictor&ndash;corrector sampling procedure.</figcaption>
-</figure>
+
+<p>
+Remasking can be applied to standard pretrained MDLMs in a
+  principled way as a plug-in sampler (formally, it can be seen as implementing a predictor&ndash;corrector Markov chain <d-cite key="campbell2022continuous"></d-cite>). Most interestingly, it endows discrete diffusion
+  with a form of inference-time compute scaling: increasing the number of
+  sampling steps lets remasking approach autoregressive quality, while under a
+  tight compute budget it better preserves quality than plain MDLM sampling
+  <d-cite key="wang2025remasking"></d-cite>.
+</p>
+
 <figure>
   <img src="{{ '/assets/img/mdlm-remasking-scaling.png' | relative_url }}" alt="Remasking inference-time scaling" />
   <figcaption>Increasing the number of sampling steps improves quality &mdash; inference-time scaling.</figcaption>
@@ -414,28 +513,38 @@ $$
 
 <h4>Uniform State Diffusion</h4>
 <p>
-  Alternatively, <strong>uniform state diffusion</strong> replaces tokens with
-  random tokens (rather than masks). At generation time the model sees a sequence
+  Alternatively, we may use an entirely different type of forward and reverse process than masking.
+  Uniform state diffusion is perhaps the most common alternative discrete form of noise.
+  Instead of masking, its forward process replaces tokens with random ones in the vocabulary.
+  The reverse process starts with a random sequences and flips tokens until the result looks like data.
+</p>
+<figure>
+  <img src="{{ '/assets/img/mdlm-udlm-comparison.png' | relative_url }}" alt="MDLM versus UDLM" />
+  <figcaption>Masked vs. uniform-state noise processes.</figcaption>
+</figure>
+
+<p>
+  At generation time the model sees a sequence
   with no masks and decides whether to replace each token, which naturally
   supports error correction, since any token &mdash; not just masked ones &mdash;
-  can be revised at any step. Uniform diffusion language models (UDLMs) enable
-  faster sampling and better controllability
-  <d-cite key="schiff2024discreteguidance"></d-cite>; the open-source Gemma
-  Diffusion model is a UDLM. Earlier, more general frameworks such as D3PM
+  can be revised at any step. 
+  While masked diffusion models typically train faster (achieving better perplexities), uniform diffusion language models (UDLMs) facilitate faster sampling <d-cite key="sahoo2025duo"></d-cite> and better controllability <d-cite key="schiff2024discreteguidance"></d-cite>, as we will discuss below. For instance, the open source Gemma diffusion model is a UDLM.
+</p>
+
+<figure>
+  <img src="{{ '/assets/img/udlm-overview.png' | relative_url }}" alt="Uniform-state diffusion overview" />
+  <figcaption>In uniform-state diffusion, tokens are corrupted by replacement with random tokens rather than masks.</figcaption>
+</figure>
+
+<p>
+Like MDLM, UDLM supports a simplified evidence lower bound objective that improves training <d-cite key="schiff2024discreteguidance"></d-cite>.
+Earlier, more general frameworks such as D3PM
   <d-cite key="austin2021structured"></d-cite> also studied uniform and other
   structured noise processes, and methods such as generalized interpolating
   discrete diffusion (GIDD) combine masking and uniform noise into a single
   process that can recover either as a special case
   <d-cite key="vonrutte2025gidd"></d-cite>.
 </p>
-<figure>
-  <img src="{{ '/assets/img/mdlm-udlm-comparison.png' | relative_url }}" alt="MDLM versus UDLM" />
-  <figcaption>Masked vs. uniform-state noise processes.</figcaption>
-</figure>
-<figure>
-  <img src="{{ '/assets/img/udlm-overview.png' | relative_url }}" alt="Uniform-state diffusion overview" />
-  <figcaption>In uniform-state diffusion, tokens are corrupted by replacement with random tokens rather than masks.</figcaption>
-</figure>
 
 <h3 id="fast-sampling-with-diffusion">Fast Sampling with Diffusion</h3>
 <p>
@@ -449,62 +558,137 @@ $$
 </p>
 <p>
   Sampling acceleration for these models is often inspired by progressive
-  distillation, originally developed for Gaussian diffusion: a model is trained
+  distillation <d-cite key="salimans2022progressive"></d-cite>: a model is trained
   on its own generations to skip a step, and this is repeated recursively,
-  halving the number of sampling steps each round
-  <d-cite key="salimans2022progressive"></d-cite>. In diffusion language models,
+  halving the number of sampling steps each round. In diffusion language models,
   this idea generalizes to techniques such as self-distillation through time
   <d-cite key="deschenaux2024sdtt"></d-cite> and discrete consistency distillation
-  <d-cite key="sahoo2025duo"></d-cite>. These can be interpreted as a form of
-  on-policy training: standard training is off-policy, since the reverse process
-  is trained on samples from the forward process rather than the samples it will
-  actually see from itself at generation time. Training on the model's own
-  samples in a post-processing step &mdash; too expensive to do during primary
-  training &mdash; is what enables these methods to improve sampling speed.
+  <d-cite key="sahoo2025duo"></d-cite>.
 </p>
 <figure>
   <img src="{{ '/assets/img/progressive-distillation.png' | relative_url }}" alt="Progressive distillation" />
   <figcaption>Progressive distillation trains a model to take larger sampling steps, halving step count each round.</figcaption>
 </figure>
 
+<p>
+These can be interpreted as a form of
+  on-policy training: standard training is off-policy, since the reverse process
+  is trained on samples from the forward process rather than the samples it will
+  actually see from itself at generation time. Training on the model's own
+  samples in a post-processing step &mdash; too expensive to do during primary
+  training &mdash; is what enables these methods to improve sampling speed.
+</p>
+
 <h3 id="diffusion-enables-controllable-generation">Diffusion Enables Controllable Generation</h3>
 <p>
   Diffusion models excel at <strong>controllable generation</strong>: producing a
   sample $x$ that also satisfies a target property $y$, such as consistency with
-  a prompt or binding affinity to a target site. Because they refine globally
-  rather than committing to irreversible local edits, they navigate the sample
-  space more effectively and produce samples with the target property. In
-  practice, controllability manifests as a Pareto trade-off between naturalness
+  a prompt if $x$ is an image or binding affinity to a target site if $x$ is a molecule. Because they refine globally
+  rather than committing to irreversible local edits, diffusion models navigate the sample
+  space more effectively and produce better samples with the target property.
+</p>
+
+<p>
+In practice, controllability manifests as a Pareto trade-off between naturalness
   (does the sample look like real data?) and property satisfaction (does it have
   the property we want?).
+  For example, we could ask the model to produce, molecules that look natural, but they might not have the binding affinity we seek. Coversely, we could optimize for binding affinity, but the outputs might not look like natural molecules and not be synthesizable. These two considerations induce a Pareto frontier on which diffusion improves over autoregression.
 </p>
-<figure>
-  <img src="{{ '/assets/img/udlm-guidance-overview.png' | relative_url }}" alt="Guidance overview" />
-  <figcaption>Guidance steers generation toward samples with a desired property $y$.</figcaption>
-</figure>
-<p>
-  Discrete diffusion supports natural analogs of classic continuous-diffusion
-  guidance techniques, classifier-based guidance (CBG) and classifier-free
-  guidance (CFG) <d-cite key="schiff2024discreteguidance"></d-cite>. In CBG, if we
-  have a predictor $p(y \mid x)$ of the target property $y$ given a sample $x$,
-  we can use it at each denoising step to guide generation and provably sample
-  from the conditional distribution $p(x \mid y) \propto p(y \mid x) p(x)$. Both
-  techniques extend naturally to MDLM and UDLM, and are especially effective when
-  combined with UDLM or with MDLM plus remasking, since both support revising
-  tokens repeatedly as guidance is applied.
-</p>
-<figure>
-  <img src="{{ '/assets/img/udlm-guidance-formula-cfg.png' | relative_url }}" alt="Classifier-free guidance" />
-  <figcaption>Classifier-free guidance (CFG) for discrete diffusion.</figcaption>
-</figure>
-<figure>
-  <img src="{{ '/assets/img/udlm-guidance-formula-cbg.png' | relative_url }}" alt="Classifier-based guidance" />
-  <figcaption>Classifier-based guidance (CBG) using a property predictor $p(y \mid x)$.</figcaption>
-</figure>
+
 <figure>
   <img src="{{ '/assets/img/udlm-guidance-pareto.png' | relative_url }}" alt="Guidance Pareto frontier" />
   <figcaption>The naturalness&ndash;vs&ndash;property Pareto frontier for autoregressive and diffusion models.</figcaption>
 </figure>
+
+<h4>Algorithms for controllable generation</h4>
+
+<p>
+  Diffusion models are especially effective at controllable generation via
+  techniques such as <strong>classifier-based guidance</strong> (CBG) and
+  <strong>classifier-free guidance</strong> (CFG). For example, in CBG, if we have
+  a predictor model $p(y \mid x)$ of the target property $y$ given a sample $x$, we
+  can use this model at each step to guide the generation process and provably
+  yield a sample from the conditional distribution
+  $p(x \mid y) \propto p(y \mid x)\, p(x)$.
+</p>
+
+<figure>
+  <img src="{{ '/assets/img/udlm-guidance-overview.png' | relative_url }}" alt="Guidance overview" />
+  <figcaption>Guidance steers generation toward samples with a desired property $y$.</figcaption>
+</figure>
+
+<p>
+  Both
+  techniques extend naturally to MDLM and UDLM <d-cite key="schiff2024discreteguidance"></d-cite>, and are especially effective when
+  combined with UDLM or with MDLM plus remasking, since both support revising
+  tokens repeatedly as guidance is applied.
+</p>
+
+<details>
+  <summary>Discrete classifier-based guidance (D-CBG): the math</summary>
+  <p>
+    By Bayes' rule, any conditional reverse process decomposes as follows:
+  </p>
+  $$
+  \underbrace{\log p(z_s \mid z_t, y)}_{\text{conditional distribution}}
+  = \underbrace{\log p(y \mid z_t, z_s)}_{\text{predictive term}}
+  + \underbrace{\log p(z_s \mid z_t)}_{\text{unconditional term}}
+  + c,
+  $$
+  <p>
+    where $c$ is a log-normalization constant. Now suppose we have a classifier $p(y \mid z_t)$ of the property $y$ from a noisy sequence $z_t$, as well as an unconditional diffusion model. We can plug them into the right hand side of the above equation to construct a conditional model from these two individual components.
+  </p>
+  $$
+  \underbrace{\log p^{(\gamma)}(z_s \mid z_t, y)}_{\text{new unnormalized distribution}}
+  = \gamma\, \underbrace{\log p(y \mid z_s, z_t)}_{\text{guidance term}}
+  + \underbrace{\log p(z_s \mid z_t)}_{\text{original diffusion model}},
+  $$
+  <p>
+    where $\gamma > 0$ is a guidance strength parameter that trades off the property
+    against the model's own preferences. For a <em>single</em> token, the left-hand-side distribution is easy to normalize: we simply sum over the $N$ possible values of
+    that token in the vocabulary. Extending this to a full sequence $z_t^{(1:L)}$ of length $L$ requires additional normalization techniques <d-cite key="schiff2024discreteguidance"></d-cite>.
+  </p>
+</details>
+
+<details>
+  <summary>Discrete classifier-free guidance (D-CFG): the math</summary>
+  <p>
+    Instead of training a separate classifier, suppose we have a conditional model
+    $p(z_s \mid z_t, y)$ and an unconditional model $p(z_s \mid z_t)$. Recall the CBG
+    factorization from above,
+  </p>
+  $$
+  \log p^{(\gamma)}(z_s \mid z_t, y)
+  = \gamma \cdot \underbrace{\log p(y \mid z_t, z_s)}_{\text{apply Bayes' rule}}
+  + \log p(z_s \mid z_t) + c,
+  $$
+  <p>
+    and apply Bayes' rule to the classifier term,
+  </p>
+  $$
+  \log p(y \mid z_t, z_s) = \log p(z_s \mid z_t, y) - \log p(z_s \mid z_t) + c.
+  $$
+  <p>
+    Substituting this in and absorbing the $z_s$-independent factors into the
+    normalization constant leaves a simple combination of the conditional and
+    unconditional reverse models:
+  </p>
+  $$
+  \underbrace{\log p^{(\gamma)}(z_s \mid z_t, y)}_{\text{new unnormalized distribution}}
+  = \gamma\, \underbrace{\log p(z_s \mid z_t, y)}_{\text{conditional model}}
+  + (1 - \gamma)\, \underbrace{\log p(z_s \mid z_t)}_{\text{unconditional model}},
+  $$
+  <p>
+    where $\gamma > 0$ is a guidance strength parameter. This form is convenient
+    because it avoids a separate classifier and, as before, is tractable to normalize:
+    for each token we only sum over its $N$ possible values. In practice, the
+    conditional $p(z_s \mid z_t, y)$ and unconditional $p(z_s \mid z_t)$ distributions
+    are parameterized by the <em>same</em> model, trained by randomly dropping the
+    conditioning signal $y$ so that the network learns both modes at once
+    <d-cite key="schiff2024discreteguidance"></d-cite>.
+  </p>
+</details>
+
 
 <h3 id="post-training-diffusion-language-models">Post-Training Diffusion Language Models</h3>
 <p>
@@ -641,7 +825,7 @@ $$
   to 100B parameters show significant promise.
 </p>
 
-<h3 id="will-diffusion-lead-to-higher-intelligence-a-scaling-law-perspective">Will Diffusion Lead to Higher Intelligence? A Scaling-Law Perspective</h3>
+<h3 id="is-diffusion-a-path-towards-more-intelligent-models-a-scaling-law-perspective">Is Diffusion A Path Towards More Intelligent Models? A Scaling-Law Perspective</h3>
 <p>
   A question the authors often receive: can diffusion eventually yield fundamental
   improvements in intelligence? From a scaling-law perspective, the transformer
