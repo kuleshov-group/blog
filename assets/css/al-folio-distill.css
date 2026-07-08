@@ -6,9 +6,9 @@
  * Change vs. upstream: figcaption had no themed color rule at all, so it
  * inherited distill's base d-article color (rgba(0,0,0,0.8)) in both
  * themes, making captions illegible in dark mode. Added a figcaption rule
- * that keeps that exact rgba(0,0,0,0.8) gray in light mode (unchanged from
- * before) and flips to rgba(255,255,255,0.8) in dark mode via the same
- * html[data-theme="dark"] selector the theme itself uses.
+ * using rgba(0,0,0,0.6) in light mode (the lighter gray captions have
+ * historically used on this site) and rgba(255,255,255,0.6) in dark mode
+ * via the same html[data-theme="dark"] selector the theme itself uses.
  *
  * If al_folio_distill ships new rules in a future release, re-sync this file
  * from the gem and re-apply the figcaption fix.
@@ -43,14 +43,14 @@ d-article table {
   color: var(--global-text-color) !important;
 }
 d-article figcaption {
-  /* Matches distill's original unstyled figcaption color exactly, so
-     light mode looks the same as before this override existed. */
-  color: rgba(0, 0, 0, 0.8) !important;
+  /* Lighter gray than body text, matching the shade captions have
+     historically used on this site. */
+  color: rgba(0, 0, 0, 0.6) !important;
 }
 html[data-theme="dark"] d-article figcaption {
-  /* Same 0.8-alpha treatment, flipped to white so captions stay legible
+  /* Same 0.6-alpha treatment, flipped to white so captions stay legible
      against the dark background instead of staying near-black. */
-  color: rgba(255, 255, 255, 0.8) !important;
+  color: rgba(255, 255, 255, 0.6) !important;
 }
 d-article h1,
 d-article h2,
