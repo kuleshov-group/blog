@@ -166,11 +166,6 @@ toc:
 <p>
   The reverse process is where the actual learning happens. We train a model to
   transform noise into images by following the steps produced by the forward process in reverse.
-  
-  Concretely, given a noisy image, we train a machine learning model to
-  <strong>separate the noise from the underlying image</strong> &mdash;
-  equivalently, to predict either the noise that was added or the clean image
-  itself, since given the noisy input, knowing one determines the other. 
 </p>
 
 <figure>
@@ -181,6 +176,11 @@ toc:
 </figure>
 
 <p>
+Concretely, given a noisy image, we train a machine learning model to
+  <strong>separate the noise from the underlying image</strong> or,
+  equivalently, to predict either the noise that was added or the clean image
+  itself, since given the noisy input, knowing one determines the other. 
+
   Once the
   model can do this, generation is simple: start from pure noise, ask the model to
   estimate and strip away a bit of it, and repeat. Each pass nudges the sample a
