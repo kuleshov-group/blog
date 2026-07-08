@@ -9,7 +9,7 @@ authors:
   - name: Volodymyr Kuleshov
     url: "https://www.cs.cornell.edu/~kuleshov/"
     affiliations:
-      name: Cornell University
+      name: Cornell University, Inception
       url: "https://www.cs.cornell.edu/"
   - name: Marianne Arriola
     url: "http://m-arriola.com/"

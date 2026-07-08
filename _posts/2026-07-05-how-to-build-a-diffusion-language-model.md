@@ -9,8 +9,8 @@ authors:
   - name: Volodymyr Kuleshov
     url: "https://www.cs.cornell.edu/~kuleshov/"
     affiliations:
-      name: Cornell University
-      url: "https://www.cs.cornell.edu/"
+      name: Cornell University, Inception
+      url: "https://inceptionlabs.ai/"
   - name: Marianne Arriola
     url: "http://m-arriola.com/"
     affiliations:
@@ -641,7 +641,7 @@ Earlier, more general frameworks such as D3PM
   <d-cite key="vonrutte2025gidd"></d-cite>.
 </p>
 
-<h3 id="fast-sampling-with-diffusion">Fast Sampling with Diffusion</h3>
+<h3 id="fast-sampling-with-diffusion">Accelerated Diffusion Samplers</h3>
 <p>
   Because diffusion can generate or refine multiple tokens per step, it can be
   5&ndash;10&times; faster than autoregressive generation. However, sampling many
