@@ -46,7 +46,7 @@ toc:
       - name: "Block Diffusion for Flexible-Length Generation"
       - name: "Architectures: Encoder, Decoder, and Encoder-Decoder"
       - name: "Iterative Refinement and Built-In Error Correction"
-      - name: "Accelerated Diffusion Samplers"
+      - name: "Accelerating Diffusion Sampling via Distillation"
       - name: "Diffusion Enables Controllable Generation"
       - name: "Post-Training Diffusion Language Models"
   - name: "Diffusion Large Language Models Today"
@@ -309,7 +309,7 @@ toc:
   in Gaussian diffusion. It starts at $1$ when $t = 0$ (a clean sequence) and
   decreases to $0$ when $t = 1$ (a fully masked sequence). The time variable $t$
   indexes a path from clean to noisy data, and at time $t$ a partially masked
-  sequence has, in expectation, a fraction $\alpha_t$ of its tokens unmasked.
+  sequence $z_t$ has, in expectation, a fraction $\alpha_t$ of its tokens unmasked.
 </p>
 <figure>
   <img src="{{ '/assets/img/mdlm-forward-1.png' | relative_url }}" alt="Masked diffusion forward process" />
@@ -641,7 +641,7 @@ Earlier, more general frameworks such as D3PM
   <d-cite key="vonrutte2025gidd"></d-cite>.
 </p>
 
-<h3 id="fast-sampling-with-diffusion">Accelerated Diffusion Samplers</h3>
+<h3 id="accelerating-diffusion-sampling-via-distillation">Accelerating Diffusion Sampling via Distillation</h3>
 <p>
   Because diffusion can generate or refine multiple tokens per step, it can be
   5&ndash;10&times; faster than autoregressive generation. However, sampling many

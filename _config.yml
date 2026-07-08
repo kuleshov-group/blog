@@ -100,7 +100,7 @@ bing_site_verification:
 # -----------------------------------------------------------------------------
 
 blog_name: Kuleshov Group Blog
-blog_description: Notes on diffusion models, language models, and machine learning.
+blog_description: We're a machine learning <a href="https://www.cs.cornell.edu/~kuleshov/">research group</a> at Cornell working on diffusion language models, generative AI, and their applications in science. This is where we jot down ideas and notes on what we're building.
 permalink: /blog/:year/:title/
 lsi: false
 
