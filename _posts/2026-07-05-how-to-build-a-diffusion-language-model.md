@@ -96,7 +96,7 @@ toc:
     many steps as there are tokens (top).
     Diffusion LLMs -- such as Gemma Diffusion shown here -- instead start from a rough, full-length draft and refine every
     position in parallel over a few rounds (bottom), rewriting the whole sequence at
-    each step rather than emitting a single token. Figure credit: M. Grootendorst & Gemmma Diffusion.
+    each step rather than emitting a single token. Figure credit: M. Grootendorst & Gemma Diffusion.
   </figcaption>
 </figure>
 
@@ -176,7 +176,7 @@ toc:
 <figure>
   <img src="{{ '/assets/img/diffusion-noise-dog-reverse.png' | relative_url }}" alt="Progressive noising of an image" />
   <figcaption>
-    Reverse path for Gaussian diffusion. Again going left to right, the generative reverse process is trained to reproduce the trajectory from the forward process in reverse, starting with noise, and reconstructring the original image.
+    Reverse path for Gaussian diffusion. Again going left to right, the generative reverse process is trained to reproduce the trajectory from the forward process in reverse, starting with noise, and reconstructing the original image.
   </figcaption>
 </figure>
 
@@ -195,7 +195,7 @@ toc:
     right) turns clean data $x_0$ into complete noise $x_T$ by adding a little
     Gaussian noise at each step; the generative reverse process (bottom, right to
     left) is trained on this data to denoise $x_T$ back to $x_0$ using the same sequence of steps. 
-    After training on a sufficiently large set of trajectories, the model learns to generalize and generatess new images starting from random samples of white noise.
+    After training on a sufficiently large set of trajectories, the model learns to generalize and generates new images starting from random samples of white noise.
   </figcaption>
 </figure>
 
@@ -213,7 +213,7 @@ toc:
   For example, the noise used in classical
   diffusion is Gaussian, and adding continuous Gaussian noise to categorical
   variables is not well-defined. Below we
-  introduce one simple yet effective  approachthat defines noise via <strong>masking</strong>. Our group popularized this approach<d-cite key="sahoo2024simple"></d-cite>,
+  introduce one simple yet effective approach that defines noise via <strong>masking</strong>. Our group popularized this approach<d-cite key="sahoo2024simple"></d-cite>,
   and it now forms the basis of most open-source diffusion language models.
 </p>
 
@@ -601,7 +601,7 @@ Remasking can be applied to standard pretrained MDLMs in a
   Alternatively, we may use an entirely different type of forward and reverse process than masking.
   Uniform state diffusion is perhaps the most common alternative discrete form of noise.
   Instead of masking, its forward process replaces tokens with random ones in the vocabulary.
-  The reverse process starts with a random sequences and flips tokens until the result looks like data.
+  The reverse process starts with a random sequence and flips tokens until the result looks like data.
 </p>
 <figure>
   <img src="{{ '/assets/img/mdlm-udlm-comparison.png' | relative_url }}" alt="MDLM versus UDLM" />
@@ -692,7 +692,7 @@ These can be interpreted as a form of
 In practice, controllability manifests as a Pareto trade-off between naturalness
   (does the sample look like real data?) and property satisfaction (does it have
   the property we want?).
-  For example, we could ask the model to produce, molecules that look natural, but they might not have the binding affinity we seek. Coversely, we could optimize for binding affinity, but the outputs might not look like natural molecules and not be synthesizable. These two considerations induce a Pareto frontier on which diffusion improves over autoregression.
+  For example, we could ask the model to produce molecules that look natural, but they might not have the binding affinity we seek. Conversely, we could optimize for binding affinity, but the outputs might not look like natural molecules and not be synthesizable. These two considerations induce a Pareto frontier on which diffusion improves over autoregression.
 </p>
 
 <figure>
@@ -723,7 +723,7 @@ In practice, controllability manifests as a Pareto trade-off between naturalness
   <figcaption>
     Left: Why diffusion is well suited to guidance. Autoregressive models commit to "local",
     left-to-right predictions, whereas diffusion makes "global" refinements
-    to the whole sequence that can be refined and error-corrected over multiiple steps. Right: Classifier-based guidance for Gaussian diffusion. A classifier that predicts a property of interest $y$ can be used steer each denoising step toward maintaining that desired property.
+    to the whole sequence that can be refined and error-corrected over multiple steps. Right: Classifier-based guidance for Gaussian diffusion. A classifier that predicts a property of interest $y$ can be used to steer each denoising step toward maintaining that desired property.
   </figcaption>
 </figure>
 
@@ -877,7 +877,7 @@ and we describe how these models are built by combining the basic building block
   regulated by non-coding genomic sequences that fall outside the scope of
   protein models like ESM3. DNA language models generalize the approach of ESM3 to both coding and non-coding genomic sequences.
 
-  In a collaboration between our research group, Instadeep, and BioNtech, we trained
+  In a collaboration between our research group, InstaDeep, and BioNTech, we trained
   the <strong>Nucleotide Transformer v3 (NT-v3)</strong> <d-cite key="boshar2025ntv3"></d-cite>
   family of models, which scales MDLM to billions of parameters and over a trillion tokens of DNA.
   These models take as input multi-track data that includes gene-expression levels alongside raw
@@ -954,7 +954,7 @@ The LLaDA models are open-weights and serve as the foundation for a large body o
 </figure>
 
 <p>
-This level of speed was previously only achievable using specialized chips (e.g, Groq) purpose-built to accelerate autoregressive inference. In contrast, a diffusion model achieves comparable speeds on standard GPUs by modifying the algorithm to better fit the underlying hardware rather than the other way around.
+This level of speed was previously only achievable using specialized chips (e.g., Groq) purpose-built to accelerate autoregressive inference. In contrast, a diffusion model achieves comparable speeds on standard GPUs by modifying the algorithm to better fit the underlying hardware rather than the other way around.
 </p>
 
 <figure>
@@ -984,8 +984,8 @@ This level of speed was previously only achievable using specialized chips (e.g,
   from NVIDIA trained with
   a joint autoregressive&ndash;diffusion objective, implementing MDLM and block diffusion.
   Recent models add an encoder-decoder architecture and scale to 35B parameters.
-  The model report roughly 2-8&times; the throughput of comparable AR models
-  while retaining up to 99% of its quality, and a single checkpoint can still fall
+  The models report roughly 2-8&times; the throughput of comparable AR models
+  while retaining up to 99% of their quality, and a single checkpoint can still fall
   back to plain autoregressive decoding.
 </p>
 
