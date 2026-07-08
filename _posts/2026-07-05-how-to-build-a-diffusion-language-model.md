@@ -1,7 +1,7 @@
 ---
 layout: distill
 title: "How to Build a Diffusion Language Model"
-description: "An introduction to diffusion language models and the research advances that underlie today's diffusion LLMs. We describe the building blocks of recent open-source models, starting from simple masking diffusion, and including techniques for iterative refinement, post-training, and variable-length generation. This introduces the main ingredients needed to build a diffusion language model today. Material is adapted from workshop talks and lectures at ICLR 2026 and MLSS 2026."
+description: "An introduction to diffusion language models and the research advances that underlie today's diffusion LLMs. We describe the building blocks of recent open-source models, starting from simple masking diffusion, and including techniques for iterative refinement, post-training, and variable-length generation. Material is adapted from workshop talks and lectures at <a href='https://realm-gen-workshop.github.io/'>ICLR 2026</a> and <a href='https://cfe.columbia.edu/content/mlss2'>MLSS 2026</a>."
 date: 2026-07-05
 featured: true
 
@@ -70,7 +70,7 @@ toc:
 </p>
 
 <p>
-  Today's mainstream language models are autoregressive: they generate tokens
+  Mainstream language models are autoregressive: they generate tokens
   left-to-right, one at a time, each conditioned on the tokens before it. This
   approach is powerful, but it also has inherent limitations:
 </p>
